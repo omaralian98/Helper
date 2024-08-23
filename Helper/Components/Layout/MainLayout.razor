@@ -1,0 +1,26 @@
+﻿@inherits LayoutComponentBase
+
+
+<MudRTLProvider RightToLeft="true">
+    @* Required *@
+    <MudThemeProvider />
+    <MudPopoverProvider />
+
+    @* Needed for dialogs *@
+    <MudDialogProvider />
+
+    @* Needed for snackbars *@
+    <MudSnackbarProvider />
+    <MudAppBar Color="Color.Primary" Elevation="10" Dense="true" Fixed="true" Gutters="true">
+        <NavMenu />
+    </MudAppBar>
+    <MudLayout Style="margin-top: 10px;">
+        <MudMainContent>
+            <MudContainer>
+                <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center">
+                    @Body
+                </MudStack>
+            </MudContainer>
+        </MudMainContent>
+    </MudLayout>
+</MudRTLProvider>

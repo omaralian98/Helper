@@ -1,0 +1,43 @@
+﻿@inject NavigationManager Nav
+
+<Router AppAssembly="@typeof(MauiProgram).Assembly">
+    <Found Context="routeData">
+        <RouteView RouteData="@routeData" DefaultLayout="@typeof(Layout.MainLayout)" />
+        <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+    </Found>
+    <NotFound>
+        <MudThemeProvider />
+        <MudPopoverProvider />
+
+        <MudStack Row="false" Wrap="Wrap.Wrap" Justify="Justify.Center" AlignItems="AlignItems.Center">
+            <MudSpacer />
+            <MudText Typo="Typo.h5">You have lost your way buddy 😁</MudText>
+            <MudText Typo="Typo.h6">Click Here to go back to a save place</MudText>
+            <MudButton OnClick="GoBack" Color="@(IsProcessing ? Color.Primary : Color.Success)" DropShadow="true" Ripple="true" Variant="Variant.Filled" Disabled="IsProcessing">
+                @if (IsProcessing)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                    <MudSpacer />
+                    <MudText Class="ms-2">جاري تحويلك</MudText>
+                }
+                else
+                {
+                    <MudIcon Icon="@Icons.Material.Filled.ArrowBack" />
+                    <MudText>Go Back</MudText>
+                }
+            </MudButton>
+        </MudStack>
+    </NotFound>
+</Router>
+
+
+@code {
+    public bool IsProcessing { get; set; } = false;
+    public async Task GoBack()
+    {
+        IsProcessing = true;
+        StateHasChanged();
+        await Task.Delay(1000);
+        Nav.NavigateTo("/");
+    }
+}

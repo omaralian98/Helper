@@ -1,0 +1,19 @@
+﻿<MudElement HtmlTag="div">
+    <MudStack  Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center">
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="navbtn" Href="/">
+            الصفحة الرئيسية
+        </MudButton>
+        <MudButton Variant="Variant.Text" Color="Color.Inherit" Class="navbtn" Href="/counter">
+            الواردات
+        </MudButton>
+        <MudMenu Variant="Variant.Text" Color="Color.Inherit" Label="الجرد" EndIcon="@Icons.Material.Filled.ArrowDropDown" AnchorOrigin="Origin.BottomLeft" TransformOrigin="Origin.TopLeft">
+            <MudMenuItem Href="/weather">اليومي</MudMenuItem>
+            <MudMenuItem Link="/another-action">الأسبوعي</MudMenuItem>
+            <MudMenuItem Link="/another-action">الشهري</MudMenuItem>
+            <MudMenuItem Link="/something-else-here">السنوي</MudMenuItem>
+        </MudMenu>
+    </MudStack>
+</MudElement>
+<MudNavMenu Rounded="true" Dense="true" Margin="Margin.Dense" Bordered="true" Color="Color.Success">
+
+</MudNavMenu>

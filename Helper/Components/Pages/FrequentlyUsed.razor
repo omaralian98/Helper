@@ -1,0 +1,30 @@
+﻿@page "/frequentlyused"
+
+<MudPaper Elevation="5" Style="margin: 5px 0 30px 0; padding: 15px 0;">
+    <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="margin-bottom: 20px;">
+        <MudText Typo="Typo.h5">
+            أكثر العمليات تكراراً
+        </MudText>
+        <MudDivider DividerType="DividerType.FullWidth" Light="false" />
+    </MudStack>
+    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Wrap="Wrap.Wrap">
+        <MudButton Color="Color.Secondary" Variant="@(Value == "Test1" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test1"))">Test1</MudButton>
+        <MudButton Color="Color.Secondary" Variant="@(Value == "Test2" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test2"))">Test2</MudButton>
+        <MudButton Color="Color.Secondary" Variant="@(Value == "Test3" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test3"))">Test3</MudButton>
+        <MudButton Color="Color.Secondary" Variant="@(Value == "Test4" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test4"))">Test4</MudButton>
+    </MudStack>
+</MudPaper>
+
+@code {
+    [Parameter]
+    public string Value { get; set; }
+
+    [Parameter]
+    public EventCallback<string> ValueChanged { get; set; }
+
+    private async Task UpdateValue(string val)
+    {
+        Value = val;
+        await ValueChanged.InvokeAsync(Value);
+    }
+}
