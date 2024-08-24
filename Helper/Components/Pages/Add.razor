@@ -4,34 +4,83 @@
 @using System.Globalization
 
 <MudPaper Elevation="5" Outlined="true" Style="padding: 10px;" Width="100%">
-    <FrequentlyUsed  @bind-Value="Operation.Title"/>
-    <EditForm Model="Operation" OnValidSubmit="Submit">
-        <DataAnnotationsValidator />
-        <MudStack Row="false" Spacing="3" Justify="Justify.Center">
-            <ValidationMessage For="() => Operation.Title" />
-            <MudTextField Margin="Margin.Dense" T="string" @bind-Value="Operation.Title" Variant="Variant.Filled" Placeholder="ادخل تفاصيل العملية" />
+    <MudPaper Elevation="5" Outlined="true">
+        <MudText Typo="Typo.h4" Align="Align.Center">
+            إضافة عملية جديدة
+        </MudText>
+    </MudPaper>
+    <FrequentlyUsed @bind-Value="Operation.Title"/>
+    <MudPaper Elevation="5" Outlined="true">
+        <EditForm Model="Operation" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <MudStack Row="false" Spacing="3" Justify="Justify.Center">
+                @* --------------------------------------------------- *@
+                <ValidationMessage For="() => Operation.Title" />
+                <MudTextField T="string"
+                              @bind-Value="Operation.Title"
+                              Variant="Variant.Outlined"
+                              Placeholder="ادخل تفاصيل العملية"
+                              Margin="Margin.Dense" />
 
-            <ValidationMessage For="() => Operation.Cost" />
-            <MudNumericField Margin="Margin.Dense" T="long" @bind-Value="Operation.Cost" Step="1000" Variant="Variant.Outlined" Culture="@(CultureInfo.GetCultureInfo("ar-sy"))" Format="N0" />
-            <div id="ShowAttachments">
-                <h1>Hiiiiiiiiiii</h1>
-            </div>
-            <MudItem Style="align-self: center;">
-                <MudIconButton Color="Color.Surface"
-                               Icon="@(ShowAttachments ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
-                               OnClick="Show" Size="Size.Small" />
-            </MudItem>
-            <MudButton Color="Color.Success" Variant="Variant.Filled" ButtonType="ButtonType.Submit">حفظ</MudButton>
-        </MudStack>
-    </EditForm>
+                @* --------------------------------------------------- *@
+                <ValidationMessage For="() => Operation.Cost" />
+                <MudNumericField T="long"
+                                 @bind-Value="Operation.Cost"
+                                 Step="1000"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Format="#,##0" />
+                @* --------------------------------------------------- *@
+
+                <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px;">
+                    <MudStack Row="false" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch" Spacing="3">
+                        <MudTextField T="string"
+                                      @bind-Value="Operation.Description"
+                                      For="() => Operation.Description"
+                                      Placeholder="ادخل وصف اختياري"
+                                      Lines="5"
+                                      Variant="Variant.Outlined" />
+
+                        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Style="width: fit-content;" Accept=".png, .jpg" MaximumFileCount="1">
+                            <ActivatorContent>
+                                <MudButton Color="Color.Primary"
+                                           Variant="Variant.Filled"
+                                           Ripple="true"
+                                           EndIcon="@Icons.Material.Filled.PhotoCamera">
+                                    أضف صورة
+                                </MudButton>
+                                <MudElement>
+                                    @if (Image is not null)
+                                    {
+                                        <MudText>@Image.Name</MudText>
+                                    }
+                                    else
+                                    {
+                                        <MudText>لم يتم اختيار صورة بعد</MudText>
+                                    }
+                                </MudElement>
+                            </ActivatorContent>
+                        </MudFileUpload>
+                    </MudStack>
+                </MudElement>
+                @* --------------------------------------------------- *@
+
+
+                <MudItem Style="align-self: center;">
+                    <MudIconButton Color="Color.Surface"
+                                   Icon="@(ShowAttachments ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
+                                   OnClick="Show" Size="Size.Small" />
+                </MudItem>
+                <MudButton Style="margin: 5px;" Color="Color.Success" Variant="Variant.Filled" ButtonType="ButtonType.Submit">حفظ</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
 </MudPaper>
 
 <script>
     function Test() {
         document.getElementById("ShowAttachments").classList.toggle("Show");
     }
-
-
 </script>
 
 @code {
@@ -39,15 +88,30 @@
     public Operation Operation { get; set; } = new();
 
     public bool ShowAttachments { get; set; } = false;
+    public IBrowserFile? Image { get; set; } = null;
+
+    private void UploadFiles(IBrowserFile file)
+    {
+        Image = file;
+    }
 
     public async Task Show()
     {
         await JS.InvokeVoidAsync("Test");
         ShowAttachments = !ShowAttachments;
+
+        await Task.Delay(200).ContinueWith(_ => 
+        {
+            if (ApplicationSettings.ResetContentAfterClosing)
+            {
+                Operation.Description = null;
+                Image = null;
+            }
+        });
     }
 
     public async Task Submit()
     {
-        Snackbar.Add($"{Operation.Title}\n{Operation.Cost}");
+        Snackbar.Add($"{Operation.Title}\n{Operation.Cost}\n{Operation.Description}");
     }
 }
