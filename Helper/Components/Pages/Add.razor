@@ -1,6 +1,7 @@
 ﻿@page "/add"
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
+@inject HelperDatabase _db
 @using System.Globalization
 
 <MudPaper Elevation="5" Outlined="true" Style="padding: 10px;" Width="100%">
@@ -41,26 +42,19 @@
                                       Lines="5"
                                       Variant="Variant.Outlined" />
 
-                        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Style="width: fit-content;" Accept=".png, .jpg" MaximumFileCount="1">
-                            <ActivatorContent>
-                                <MudButton Color="Color.Primary"
-                                           Variant="Variant.Filled"
-                                           Ripple="true"
-                                           EndIcon="@Icons.Material.Filled.PhotoCamera">
-                                    أضف صورة
-                                </MudButton>
-                                <MudElement>
-                                    @if (Image is not null)
-                                    {
-                                        <MudText>@Image.Name</MudText>
-                                    }
-                                    else
-                                    {
-                                        <MudText>لم يتم اختيار صورة بعد</MudText>
-                                    }
-                                </MudElement>
-                            </ActivatorContent>
-                        </MudFileUpload>
+                        <MudButton Color="Color.Primary"
+                                   Variant="Variant.Filled"
+                                   Ripple="true"
+                                   EndIcon="@Icons.Material.Filled.PhotoCamera"
+                                   OnClick="TakePhoto" Style="width: fit-content;">
+                            أضف صورة
+                        </MudButton>
+                        <MudElement>
+                            @if (Photo is null)
+                            {
+                                <MudText>لم يتم اختيار صورة بعد</MudText>
+                            }
+                        </MudElement>
                     </MudStack>
                 </MudElement>
                 @* --------------------------------------------------- *@
@@ -88,12 +82,8 @@
     public Operation Operation { get; set; } = new();
 
     public bool ShowAttachments { get; set; } = false;
-    public IBrowserFile? Image { get; set; } = null;
-
-    private void UploadFiles(IBrowserFile file)
-    {
-        Image = file;
-    }
+    public FileResult? Photo { get; set; } = null;
+    public string? Base64 { get; set; } = null;
 
     public async Task Show()
     {
@@ -105,13 +95,48 @@
             if (ApplicationSettings.ResetContentAfterClosing)
             {
                 Operation.Description = null;
-                Image = null;
+                Photo = null;
             }
         });
     }
 
     public async Task Submit()
     {
-        Snackbar.Add($"{Operation.Title}\n{Operation.Cost}\n{Operation.Description}");
+        try
+        {
+            string localFilePath = Path.Combine(FileSystem.AppDataDirectory, $"{Operation.Title}-{Operation.Date.ToString("yyyy-mm-dd-hh-mm-ss")}");
+            await SavePhotoTo(Photo, localFilePath);
+            Operation.Path = localFilePath;
+            _db.SaveOperationAsync(Operation);
+            Snackbar.Add("تم إضافة العملية بنجاح", Severity.Success);
+        }
+        catch (Exception e)
+        {
+            #if DEBUG
+            Snackbar.Add(e.Message, Severity.Error);
+            #else
+            Snackbar.Add("فشلت عملية الإضافة", Severity.Error);
+            #endif
+        }
+    }
+
+    public async void TakePhoto()
+    {
+        if (MediaPicker.Default.IsCaptureSupported)
+        {
+            Photo = await MediaPicker.Default.CapturePhotoAsync();
+            StateHasChanged();
+        }
+    }
+
+    public static async Task SavePhotoTo(FileResult photo, string path)
+    {
+        if (photo is not null)
+        {
+            using Stream sourceStream = await photo.OpenReadAsync();
+            using FileStream localFileStream = File.OpenWrite(path);
+
+            await sourceStream.CopyToAsync(localFileStream);
+        }
     }
 }

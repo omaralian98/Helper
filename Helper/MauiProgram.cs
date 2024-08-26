@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Helper.Data;
+using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
 
 namespace Helper
@@ -15,6 +16,7 @@ namespace Helper
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
+            builder.Services.AddSingleton<HelperDatabase>();
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
 

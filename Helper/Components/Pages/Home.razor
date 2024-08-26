@@ -1,4 +1,31 @@
 ﻿@page "/"
+@inject HelperDatabase _db
 
+@foreach (var operation in Operations)
+{
+    <MudCard>
+        <MudCardMedia Image="@operation.Path" Height="200" />
+        <MudCardContent>
+            <MudText Typo="Typo.h5">@operation.Title</MudText>
+            <MudText Typo="Typo.body2">@operation.Cost</MudText>
+            <MudText Typo="Typo.body2">@operation.Description</MudText>
+        </MudCardContent>
+        <MudCardActions>
+            <MudButton Variant="Variant.Text" Color="Color.Primary">Share</MudButton>
+            <MudButton Variant="Variant.Text" Color="Color.Primary">Learn More</MudButton>
+        </MudCardActions>
+    </MudCard>
+}
 
 <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="اضف" Href="/add" />
+
+
+
+@code {
+    public List<Operation> Operations { get; set; } = [];
+
+    protected override async Task OnInitializedAsync()
+    {
+        Operations = await _db.GetOperationsAsync();
+    }
+}
