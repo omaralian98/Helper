@@ -1,9 +1,12 @@
 ﻿@page "/"
 @inject HelperDatabase _db
 
-@foreach (var operation in Operations)
+<h1>@Urls.Count</h1>
+@foreach (var operation in Urls)
 {
-    <MudCard>
+    <h6>hi</h6>
+    <img src="@operation"/>
+@*     <MudCard>
         <MudCardMedia Image="@operation.Path" Height="200" />
         <MudCardContent>
             <MudText Typo="Typo.h5">@operation.Title</MudText>
@@ -14,7 +17,7 @@
             <MudButton Variant="Variant.Text" Color="Color.Primary">Share</MudButton>
             <MudButton Variant="Variant.Text" Color="Color.Primary">Learn More</MudButton>
         </MudCardActions>
-    </MudCard>
+    </MudCard> *@
 }
 
 <MudFab Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Label="اضف" Href="/add" />
@@ -23,9 +26,46 @@
 
 @code {
     public List<Operation> Operations { get; set; } = [];
+    public List<string> Urls { get; set; } = [];
 
-    protected override async Task OnInitializedAsync()
+    protected override async Task OnAfterRenderAsync(bool firstRender)
     {
-        Operations = await _db.GetOperationsAsync();
+        if (firstRender)
+        {
+            Operations = await _db.GetOperationsAsync();
+            Urls = (await Task.WhenAll(Operations.Select(async x => await GetBase64(x.Path)))).ToList();
+            StateHasChanged();
+        }
+    }
+
+    public async Task<string> GetBase64(string path)
+    {
+        if (File.Exists(path))
+        {
+            byte[] fileBytes = await File.ReadAllBytesAsync(path);
+            string base64String = Convert.ToBase64String(fileBytes);
+
+            // Determine the MIME type based on the file extension
+            string mimeType = GetMimeType(path);
+
+            // Return the full base64 image source string
+            return $"data:{mimeType};base64,{base64String}";
+        }
+        return string.Empty;
+    }
+
+    private string GetMimeType(string path)
+    {
+        string extension = Path.GetExtension(path).ToLowerInvariant();
+        return extension switch
+        {
+            ".jpg" or ".jpeg" => "image/jpeg",
+            ".png" => "image/png",
+            ".gif" => "image/gif",
+            ".bmp" => "image/bmp",
+            ".svg" => "image/svg+xml",
+            ".webp" => "image/webp",
+            _ => "application/octet-stream" // Default for unknown types
+        };
     }
 }
