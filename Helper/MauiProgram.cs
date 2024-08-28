@@ -16,7 +16,9 @@ namespace Helper
                     fonts.AddFont("OpenSans-Regular.ttf", "OpenSansRegular");
                 });
 
-            builder.Services.AddSingleton<HelperDatabase>();
+            builder.Services.AddSingleton(typeof(HelperDatabase<>));
+            builder.Services.AddSingleton<OperationRepository>();
+            builder.Services.AddSingleton<InventoryRepository>();
             builder.Services.AddMauiBlazorWebView();
             builder.Services.AddMudServices();
 

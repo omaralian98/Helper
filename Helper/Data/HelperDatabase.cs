@@ -3,26 +3,26 @@ using Helper.Models;
 
 namespace Helper.Data;
 
-public class HelperDatabase
+public class HelperDatabase<T> where T : Entity, new()
 {
-    private SQLiteAsyncConnection Database;
+    protected SQLiteAsyncConnection Database;
 
     public HelperDatabase()
     {
         //DropTables();
-        CreateTables();
+        CreateTables().ConfigureAwait(false);
     }
 
-    private void CreateTables()
+    private async Task CreateTables()
     {
         if (Database is not null)
             return;
 
         Database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
-        Database.CreateTableAsync<Operation>();
+        await Database.CreateTableAsync<T>();
     }
 
-    private void DropTables()
+    private async Task DropTables()
     {
         if (Database is not null)
             return;
@@ -30,22 +30,22 @@ public class HelperDatabase
         try
         {
             Database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
-            Database.DropTableAsync<Operation>();
+            await Database.DropTableAsync<T>();
         }
         catch { }
     }
 
-    public async Task<List<Operation>> GetOperationsAsync()
+    protected async Task<List<T>> GetAllAsync()
     {
-        return await Database.Table<Operation>().ToListAsync();
+        return await Database.Table<T>().ToListAsync();
     }
 
-    public async Task<Operation> GetOperationAsync(int id)
+    protected async Task<T> GetAsync(int id)
     {
-        return await Database.Table<Operation>().Where(i => i.Id == id).FirstOrDefaultAsync();
+        return await Database.Table<T>().Where(i => i.Id == id).FirstOrDefaultAsync();
     }
 
-    public async Task<int> SaveOperationAsync(Operation operation)
+    protected async Task<int> SaveAsync(T operation)
     {
         if (operation.Id != 0)
             return await Database.UpdateAsync(operation);
@@ -53,7 +53,7 @@ public class HelperDatabase
             return await Database.InsertAsync(operation);
     }
 
-    public async Task<int> DeleteOperationAsync(Operation operation)
+    protected async Task<int> DeleteAsync(T operation)
     {
         return await Database.DeleteAsync(operation);
     }
