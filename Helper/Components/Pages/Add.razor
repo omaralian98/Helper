@@ -1,7 +1,8 @@
 ﻿@page "/add"
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
-@inject HelperDatabase _db
+@inject OperationRepository _db
+@inject NavigationManager Nav
 @using System.Globalization
 
 <MudPaper Elevation="5" Outlined="true" Style="padding: 10px;" Width="100%">
@@ -10,7 +11,14 @@
             إضافة عملية جديدة
         </MudText>
     </MudPaper>
-    <FrequentlyUsed @bind-Value="Operation.Title"/>
+    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" StretchItems="StretchItems.All" Spacing="2">
+        <FrequentlyUsed 
+            Title="العمليات الأكثر تكراراً"  
+            T="string"
+            @bind-Value="Operation.Title"
+            ShowCount="4"
+            GetValues="@_db.GetMostFrequentlyUsedOperations"/>
+    </MudStack>
     <MudPaper Elevation="5" Outlined="true">
         <EditForm Model="Operation" OnValidSubmit="Submit">
             <DataAnnotationsValidator />
@@ -20,61 +28,43 @@
                 <MudTextField T="string"
                               @bind-Value="Operation.Title"
                               Variant="Variant.Outlined"
-                              Placeholder="ادخل تفاصيل العملية"
+                              Placeholder="ادخل اسم العملية"
                               Margin="Margin.Dense" />
 
                 @* --------------------------------------------------- *@
                 <ValidationMessage For="() => Operation.Cost" />
                 <MudNumericField T="long"
                                  @bind-Value="Operation.Cost"
+                                 Label="القيمة المدفوعة"
                                  Step="1000"
                                  Variant="Variant.Outlined"
                                  Margin="Margin.Dense"
                                  Format="#,##0" />
                 @* --------------------------------------------------- *@
 
-                <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px;">
+                <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px; overflow-x: hidden;">
                     <MudStack Row="false" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch" Spacing="3">
                         <MudTextField T="string"
                                       @bind-Value="Operation.Description"
                                       For="() => Operation.Description"
-                                      Placeholder="ادخل وصف اختياري"
+                                      Placeholder="[اختياري] ادخل تفاصيل"
                                       Lines="5"
                                       Variant="Variant.Outlined" />
 
-@*                         <MudButton Color="Color.Primary"
-                                   Variant="Variant.Filled"
-                                   Ripple="true"
-                                   EndIcon="@Icons.Material.Filled.PhotoCamera"
-                                   OnClick="TakePhoto" Style="width: fit-content;">
-                            أضف صورة
-                        </MudButton>
-                        <MudElement>
-                            @if (Photo is null)
-                            {
-                                <MudText>لم يتم اختيار صورة بعد</MudText>
-                            }
-                        </MudElement> *@
-                        <MudFileUpload T="IBrowserFile" FilesChanged="UploadFiles" Style="width: fit-content;" Accept=".png, .jpg" MaximumFileCount="1">
-                            <ActivatorContent>
-                                <MudButton Color="Color.Primary"
-                                           Variant="Variant.Filled"
-                                           Ripple="true"
-                                           EndIcon="@Icons.Material.Filled.PhotoCamera">
-                                    أضف صورة
-                                </MudButton>
-                                <MudElement>
-                                    @if (Image is not null)
-                                    {
-                                        <MudText>@Image.Name</MudText>
-                                    }
-                                    else
-                                    {
-                                        <MudText>لم يتم اختيار صورة بعد</MudText>
-                                    }
-                                </MudElement>
-                            </ActivatorContent>
-                        </MudFileUpload>
+                        <MudElement HtmlTag="div" Style="margin: 0 5px;">
+                            <MudDatePicker 
+                                           Label="تاريخ العملية"
+                                           OpenTo="OpenTo.Date"
+                                           AdornmentColor="Color.Secondary"
+                                           @bind-Date="Date"
+                                           PickerVariant="PickerVariant.Dialog"
+                                           Color="Color.Primary"
+                                           Rounded="true"
+                                           Disabled="@(!OldOperation)"
+                                           Variant="Variant.Outlined"/>
+
+                            <MudSwitch @bind-Value="OldOperation" Label="تسجيل عملية قديمة" Color="Color.Success" UncheckedColor="Color.Error" />
+                        </MudElement>
                     </MudStack>
                 </MudElement>
                 @* --------------------------------------------------- *@
@@ -102,8 +92,21 @@
     public Operation Operation { get; set; } = new();
 
     public bool ShowAttachments { get; set; } = false;
-    public FileResult? Photo { get; set; } = null;
-    public IBrowserFile? Image { get; set; } = null;
+
+    public DateTime? Date { get; set; }
+
+    private bool _OldOperation = false;
+
+    public bool OldOperation { get { return _OldOperation; } set { _OldOperation = value; if (!value) { Date = Operation.Date; } } }
+
+    protected override void OnAfterRender(bool firstRender)
+    {
+        if (firstRender)
+        {
+            Date = Operation.Date;
+        }
+        base.OnAfterRender(firstRender);
+    }
 
     public async Task Show()
     {
@@ -115,62 +118,28 @@
             if (ApplicationSettings.ResetContentAfterClosing)
             {
                 Operation.Description = null;
-                Photo = null;
+                Date = Operation.Date;
+                OldOperation = false;
             }
         });
     }
 
-    public async Task UploadFiles(IBrowserFile file)
-    {
-        Image = file;
-    }
 
     public async Task Submit()
     {
-        try
+        var oldDate = Operation.Date;
+        Operation.Date = Date!.Value;
+        bool IsSuccessFul = (await _db.SaveAsync(Operation)) > 0;
+        if (IsSuccessFul)
         {
-            string localFilePath = Path.Combine(FileSystem.AppDataDirectory, Image.Name);
-            
-            if (Image is not null)
-            {
-                using Stream sourceStream = Image.OpenReadStream();
-                using FileStream localFileStream = File.OpenWrite(localFilePath);
-
-                await sourceStream.CopyToAsync(localFileStream);
-            }
-
-            // await SavePhotoTo(Photo, localFilePath);
-            Operation.Path = localFilePath;
-            _db.SaveOperationAsync(Operation);
-            Snackbar.Add("تم إضافة العملية بنجاح", Severity.Success);
+            Snackbar.Add($"تم إضافة العملية بنجاح\n{Operation.Date}", Severity.Success);
+            if (ApplicationSettings.RedirectToHomeAfterSuccessfullyAddingANewOperation)
+                Nav.NavigateTo("/");
         }
-        catch (Exception e)
+        else
         {
-            #if DEBUG
-            Snackbar.Add(e.Message, Severity.Error);
-            #else
+            Operation.Date = oldDate;
             Snackbar.Add("فشلت عملية الإضافة", Severity.Error);
-            #endif
-        }
-    }
-
-    public async void TakePhoto()
-    {
-        if (MediaPicker.Default.IsCaptureSupported)
-        {
-            Photo = await MediaPicker.Default.CapturePhotoAsync();
-            StateHasChanged();
-        }
-    }
-
-    public static async Task SavePhotoTo(FileResult photo, string path)
-    {
-        if (photo is not null)
-        {
-            using Stream sourceStream = await photo.OpenReadAsync();
-            using FileStream localFileStream = File.OpenWrite(path);
-
-            await sourceStream.CopyToAsync(localFileStream);
         }
     }
 }

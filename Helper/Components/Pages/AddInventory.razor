@@ -1,0 +1,101 @@
+﻿@page "/inventory/add"
+@inject IJSRuntime JS
+@inject ISnackbar Snackbar
+@inject InventoryRepository _db
+@inject NavigationManager Nav
+@using System.Globalization
+
+<MudPaper Elevation="5" Outlined="true" Style="padding: 10px;" Width="100%">
+    <MudPaper Elevation="5" Outlined="true">
+        <MudText Typo="Typo.h4" Align="Align.Center">
+            إضافة وارد جديد
+        </MudText>
+    </MudPaper>
+    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" StretchItems="StretchItems.All" Spacing="2">
+        <FrequentlyUsed Title="الواردت الأكثر تكراراً"
+                        T="long"
+                        @bind-Value="Inventory.Income"
+                        ShowCount="4"
+                        GetValues="@_db.GetMostFrequentlyAddedIncomes" />
+    </MudStack>
+    <MudPaper Elevation="5" Outlined="true">
+        <EditForm Model="Inventory" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <MudStack Row="false" Spacing="3" Justify="Justify.Center">
+
+                <ValidationMessage For="() => Inventory.Income" />
+                <MudNumericField T="long"
+                                 Label="الوارد"
+                                 @bind-Value="Inventory.Income"
+                                 Step="1000"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 Format="#,##0" />
+                @* --------------------------------------------------- *@
+
+                <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px; overflow-x: hidden;">
+                    <MudStack Row="false" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch" Spacing="3">
+                        <MudTextField T="string"
+                                      @bind-Value="Inventory.Description"
+                                      For="() => Inventory.Description"
+                                      Placeholder="[اختياري] ادخل تفاصيل"
+                                      Lines="5"
+                                      Variant="Variant.Outlined" />
+                    </MudStack>
+                </MudElement>
+                @* --------------------------------------------------- *@
+
+
+                <MudItem Style="align-self: center;">
+                    <MudIconButton Color="Color.Surface"
+                                   Icon="@(ShowAttachments ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
+                                   OnClick="Show" Size="Size.Small" />
+                </MudItem>
+                <MudButton Style="margin: 5px;" Color="Color.Success" Variant="Variant.Filled" ButtonType="ButtonType.Submit">حفظ</MudButton>
+            </MudStack>
+        </EditForm>
+    </MudPaper>
+</MudPaper>
+
+<script>
+    function Test() {
+        document.getElementById("ShowAttachments").classList.toggle("Show");
+    }
+</script>
+
+@code {
+    [SupplyParameterFromForm]
+    public Models.Inventory Inventory { get; set; } = new();
+
+    public bool ShowAttachments { get; set; } = false;
+
+    public async Task Show()
+    {
+        await JS.InvokeVoidAsync("Test");
+        ShowAttachments = !ShowAttachments;
+
+        await Task.Delay(200).ContinueWith(_ =>
+        {
+            if (ApplicationSettings.ResetContentAfterClosing)
+            {
+                Inventory.Description = null;
+            }
+        });
+    }
+
+
+    public async Task Submit()
+    {
+        bool IsSuccessFul = (await _db.SaveAsync(Inventory)) > 0;
+        if (IsSuccessFul)
+        {
+            Snackbar.Add($"تم إضافة {Inventory.Income} كوارد", Severity.Success);
+            if (ApplicationSettings.RedirectToHomeAfterSuccessfullyAddingANewOperation)
+                Nav.NavigateTo("/");
+        }
+        else
+        {
+            Snackbar.Add("فشلت عملية الإضافة", Severity.Error);
+        }
+    }
+}

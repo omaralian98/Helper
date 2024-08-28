@@ -1,27 +1,73 @@
 ﻿@page "/frequentlyused"
+@typeparam T
 
-<MudPaper Style="margin: 5px 0 10px 0; padding: 15px 0;" Outlined="true">
-    <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="margin-bottom: 10px;">
-        <MudText Typo="Typo.h6">
-            العمليات الأكثر استخداماً
-        </MudText>
-    </MudStack>
-    <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Wrap="Wrap.Wrap">
-        <MudButton Color="Color.Secondary" Variant="@(Value == "Test1" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test1"))">Test1</MudButton>
-        <MudButton Color="Color.Secondary" Variant="@(Value == "Test2" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test2"))">Test2</MudButton>
-        <MudButton Color="Color.Secondary" Variant="@(Value == "Test3" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test3"))">Test3</MudButton>
-        <MudButton Color="Color.Secondary" Variant="@(Value == "Test4" ?  Variant.Filled : Variant.Outlined)" Ripple="true" OnClick="@(() => UpdateValue("Test4"))">Test4</MudButton>
-    </MudStack>
-</MudPaper>
+@if (ValuesList is not null && ValuesList.Count > 0)
+{
+    <MudPaper Style="margin: 5px 0 10px 0; padding: 15px 0;" Outlined="true">
+        <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center" Style="margin-bottom: 10px;">
+            <MudText Typo="Typo.h6">
+                @Title
+            </MudText>
+        </MudStack>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Wrap="Wrap.Wrap">
+            @{
+                #pragma warning disable 8602
+            }
+            @foreach (var value in ValuesList)
+            {
+                <MudButton Color="Color.Secondary"
+                           Variant="@(value.Equals(Value) ? Variant.Filled : Variant.Outlined)"
+                           Ripple="true"
+                           OnClick="@(() => UpdateValue(value))">
+                    @value.ToString()
+                </MudButton>
+            }
+            @{
+                #pragma warning restore 8602
+            }
+        </MudStack>
+    </MudPaper>
+}
 
 @code {
-    [Parameter]
-    public string Value { get; set; }
+    private List<T> ValuesList { get; set; } = [];
 
+    /// <summary>
+    /// The Title that will be shown before the list of values.
+    /// </summary>
     [Parameter]
-    public EventCallback<string> ValueChanged { get; set; }
+    public string Title { get; set; } = "";
 
-    private async Task UpdateValue(string val)
+    /// <summary>
+    /// The number of values to show.
+    /// </summary>
+    [Parameter]
+    public int ShowCount { get; set; } = 4;
+
+    /// <summary>
+    /// The function that returns a list of values
+    /// </summary>
+    [Parameter]
+    public Func<int, Task<List<T>>> GetValues { get; set; }
+
+    /// <summary>
+    /// The currently selected value
+    /// </summary>
+    [Parameter]
+    public T Value { get; set; }
+
+    /// <summary>
+    /// Event callback for when the value changes
+    /// </summary>
+    [Parameter]
+    public EventCallback<T> ValueChanged { get; set; }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        ValuesList = await GetValues.Invoke(ShowCount) ?? [];
+    }
+
+    private async Task UpdateValue(T val)
     {
         Value = val;
         await ValueChanged.InvokeAsync(Value);
