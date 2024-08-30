@@ -20,7 +20,19 @@ public class HelperDatabase<T> where T : Entity, new()
 
         Database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
         await Database.CreateTableAsync<T>();
+
+        //// Create an index on the Date column for all entities that have a Date property
+        //await CreateIndexOnDateAsync();
     }
+
+    //private async Task CreateIndexOnDateAsync()
+    //{
+    //    var tableName = typeof(T).Name;
+
+    //    var createIndexSql = $"CREATE INDEX IF NOT EXISTS IX_{tableName}_Date ON {tableName} (Date);";
+
+    //    var res = await Database.ExecuteAsync(createIndexSql);
+    //}
 
     private async Task DropTables()
     {
@@ -56,5 +68,25 @@ public class HelperDatabase<T> where T : Entity, new()
     public async Task<int> DeleteAsync(T operation)
     {
         return await Database.DeleteAsync(operation);
+    }
+
+    public async Task<int> GetFirst() => await GetFirstOrLast(last: false);
+
+    public async Task<int> GetLast() => await GetFirstOrLast(last: true);
+
+    private async Task<int> GetFirstOrLast(bool last)
+    {
+        string IsDESC = last ? "DESC" : "";
+
+        var query = $@"
+            SELECT 
+                [{nameof(Entity.DateAsString)}]
+            FROM 
+                [{typeof(T).Name}]
+            ORDER BY [{nameof(Entity.DateAsString)}] {(IsDESC)}
+            LIMIT 1;";
+
+        T res = (await Database.QueryAsync<T>(query)).First();
+        return res.Date.Year;
     }
 }

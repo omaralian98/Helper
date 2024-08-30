@@ -1,24 +1,14 @@
 ﻿@page "/inventory"
+@using Helper.ViewModel
 
 <MudContainer>
     <MudStack Row="false" AlignItems="AlignItems.Stretch">
-        <MudExpansionPanels MultiExpansion="true">
-            <MudExpansionPanel Text="Panel One" MaxHeight="150" Expanded="true">
-                Panel One Content
-            </MudExpansionPanel>
-            <MudExpansionPanel Text="Panel Two" MaxHeight="500">
-                Panel Two Content
-            </MudExpansionPanel>
-            <MudExpansionPanel Text="Panel Three" MaxHeight="1000">
-                Panel Three Content
-            </MudExpansionPanel>
-            <MudExpansionPanel Text="Panel Four">
-                Panel Four Content
-            </MudExpansionPanel>
-        </MudExpansionPanels>
-
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/inventory/add">
             اضف
         </MudButton>
     </MudStack>
 </MudContainer>
+
+@code {
+
+}

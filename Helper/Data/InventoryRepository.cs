@@ -1,4 +1,6 @@
 ﻿using Helper.Models;
+using Helper.ViewModel;
+using SQLite;
 
 namespace Helper.Data;
 
@@ -14,7 +16,7 @@ public class InventoryRepository : HelperDatabase<Inventory>
             GROUP BY 
                 [{nameof(Inventory.Income)}]
             ORDER BY 
-                COUNT(*) DESC, [{nameof(Inventory.Date)}] DESC
+                COUNT(*) DESC, [{nameof(Inventory.DateAsString)}] DESC
             LIMIT {count};";
 
 

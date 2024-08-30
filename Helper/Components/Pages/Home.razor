@@ -1,16 +1,17 @@
 ﻿@page "/"
+@using Helper.ViewModel.Operations
 @inject HelperDatabase<Operation> _db
 
 <MudContainer MaxWidth="MaxWidth.False">
     <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center">
         <MudText Typo="Typo.h4" Align="Align.Center">@DateTime.Now.ToShortDateString()</MudText>
-        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/add">
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/operation/add">
             اضف
         </MudButton>
     </MudStack>
 </MudContainer>
 
-@* <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch">
+<MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch">
 
 @foreach (var operation in Operations)
 {
@@ -18,17 +19,18 @@
         <MudCardContent>
             <MudText>@operation.Title</MudText>
             <MudText Typo="Typo.body2">@operation.Description</MudText>
-            <MudText Typo="Typo.body2">@operation.Date.ToString("tt hh:mm ")</MudText>
+            <MudText Typo="Typo.body2">@operation.Date.ToString()</MudText>
         </MudCardContent>
     </MudCard>
 }
-</MudStack> *@
+</MudStack>
 
 
 
 @code {
     public List<Operation> Operations { get; set; } = [];
 
+    List<OperationYearViewModel> Years { get; set; } = [];
 
     protected override async Task OnInitializedAsync()
     {

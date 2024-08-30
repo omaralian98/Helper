@@ -12,5 +12,4 @@ public class Operation : Entity
     [Range(0, long.MaxValue)]
     public long Cost { get; set; } = ApplicationSettings.OperationDefaultValue;
     public string? Description { get; set; } = null;
-    public DateTime Date { get; set; } = DateTime.Now;
 }

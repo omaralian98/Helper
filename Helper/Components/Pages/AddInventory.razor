@@ -91,7 +91,7 @@
         {
             Snackbar.Add($"تم إضافة {Inventory.Income} كوارد", Severity.Success);
             if (ApplicationSettings.RedirectToHomeAfterSuccessfullyAddingANewOperation)
-                Nav.NavigateTo("/");
+                Nav.NavigateTo("/inventory");
         }
         else
         {

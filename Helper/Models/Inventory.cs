@@ -8,5 +8,4 @@ public class Inventory : Entity
     [Required(ErrorMessage ="يجب إدخال قيمة الوارد")]
     [Range(0, long.MaxValue, ErrorMessage ="قيمة الوارد لا يمكن أن تكون سالبة")]
     public long Income { get; set; } = ApplicationSettings.InventoryDefaultValue;
-    public DateTime Date { get; set; } = DateTime.Now;
 }
