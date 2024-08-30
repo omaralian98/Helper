@@ -14,7 +14,7 @@ public class OperationRepository : HelperDatabase<Operation>
             GROUP BY 
                 [{nameof(Operation.Title)}]
             ORDER BY 
-                COUNT(*) DESC
+                COUNT(*) DESC, [{nameof(Operation.Date)}] DESC
             LIMIT {count};";
 
 

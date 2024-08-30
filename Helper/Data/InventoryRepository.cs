@@ -14,7 +14,7 @@ public class InventoryRepository : HelperDatabase<Inventory>
             GROUP BY 
                 [{nameof(Inventory.Income)}]
             ORDER BY 
-                COUNT(*) DESC
+                COUNT(*) DESC, [{nameof(Inventory.Date)}] DESC
             LIMIT {count};";
 
 
