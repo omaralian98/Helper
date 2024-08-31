@@ -12,4 +12,5 @@ public static class ApplicationSettings
 
     public static long InventoryDefaultValue { get; set; } = 10_000;
 
+    public static bool ExpandTheCurrentDateOnStart { get; set; } = true;
 }

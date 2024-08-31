@@ -138,3 +138,27 @@
         max-height: 1000px;
         transition: all 0.4s ease;
     }
+
+
+.operation-card {
+    cursor: pointer;
+    transition: all 0.5s;
+}
+    .operation-card:hover {
+        transition: all 0.5s;
+        transform: scale(1.1);
+        background: #585b63;
+    }
+
+
+.operation-current-date {
+    background: #dae2eb !important;
+}
+
+.operation-even-year {
+    background: #f2f2f2 !important;
+}
+
+.operation-odd-year {
+/*    background: #cff74a !important;*/
+}

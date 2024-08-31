@@ -1,39 +1,160 @@
 ﻿@page "/"
 @using Helper.ViewModel.Operations
-@inject HelperDatabase<Operation> _db
+@inject OperationRepository _db
+@inject ISnackbar Snackbar
 
 <MudContainer MaxWidth="MaxWidth.False">
-    <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Center">
-        <MudText Typo="Typo.h4" Align="Align.Center">@DateTime.Now.ToShortDateString()</MudText>
+    <MudStack Row="false" AlignItems="AlignItems.Stretch">
+        <MudExpansionPanels MultiExpansion="false" Gutters="true">
+            @if (Years is not null)
+            {
+                @foreach (var year in Years)
+                {
+                    <MudExpansionPanel Text=@year.ToString() Class="@(GetYearStyle(year))" Expanded="@(ShouldExpandYear(year))" ExpandedChanged="@(async () => await ExpandYear(year))">
+                        <p>مجموع مصاريف هذه السنة : @year.TotalCost.ToString("N0")</p>
+                        <p>عدد عمليات هذه السنة : @year.OperationCount.ToString("N0")</p>
+                        <MudExpansionPanels MultiExpansion="true" Gutters="true" Elevation="5" Outlined="true" Square="true">
+                            @foreach (var month in year.Operations)
+                            {
+                                <MudExpansionPanel Text=@month.ToString() Class="@(GetMonthStyle(month))" Expanded="@(ShouldExpandMonth(month))" ExpandedChanged="@(async () => await ExpandMonth(month))">
+                                    <p>مجموع مصاريف هذا الشهر : @month.TotalCost.ToString("N0")</p>
+                                    <p>عدد عمليات هذا الشهر : @month.OperationCount.ToString("N0")</p>
+                                    <MudExpansionPanels MultiExpansion="true" Elevation="5" Outlined="true" Square="true">
+                                        @foreach (var day in month.Operations)
+                                        {
+                                            <MudExpansionPanel Text=@day.ToString() Class="@(GetDayStyle(day))" Expanded="@(ShouldExpandDay(day))" ExpandedChanged="@(async () => await ExpandDay(day))">
+                                                <p>مجموع مصاريف هذا اليوم : @day.TotalCost.ToString("N0")</p>
+                                                <p>عدد عمليات هذا اليوم : @day.OperationCount.ToString("N0")</p>
+                                                <MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.FlexStart" AlignItems="AlignItems.Center" StretchItems="StretchItems.All">
+                                                    @foreach (var operation in day.Operations)
+                                                    {
+                                                        <MudCard Class="operation-card" @onclick="@(() => Snackbar.Add("Hi"))" Elevation="5" Style="width: fit-content; height: fit-content;">
+                                                            <MudCardContent>
+                                                                <MudText>@operation.Title</MudText>
+                                                                <MudText Typo="Typo.body2">@operation.Date.ToString("tt hh:mm")</MudText>
+                                                            </MudCardContent>
+                                                        </MudCard>
+                                                    }
+                                                </MudStack>
+                                            </MudExpansionPanel>
+                                        }
+                                    </MudExpansionPanels>
+                                </MudExpansionPanel>
+                            }
+                        </MudExpansionPanels>
+                    </MudExpansionPanel>
+                }
+            }
+        </MudExpansionPanels>
+
         <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/operation/add">
             اضف
         </MudButton>
     </MudStack>
 </MudContainer>
 
-<MudStack Row="true" Wrap="Wrap.Wrap" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch">
-
-@foreach (var operation in Operations)
-{
-    <MudCard Elevation="5">
-        <MudCardContent>
-            <MudText>@operation.Title</MudText>
-            <MudText Typo="Typo.body2">@operation.Description</MudText>
-            <MudText Typo="Typo.body2">@operation.Date.ToString()</MudText>
-        </MudCardContent>
-    </MudCard>
-}
-</MudStack>
-
-
-
 @code {
-    public List<Operation> Operations { get; set; } = [];
-
     List<OperationYearViewModel> Years { get; set; } = [];
+    OperationYearViewModel? CurrentYear { get; set; } = null;
+    OperationMonthViewModel? CurrentMonth { get; set; } = null;
+    OperationDayViewModel? CurrentDay { get; set; } = null;
 
     protected override async Task OnInitializedAsync()
     {
-        Operations = await _db.GetAllAsync();
+        Years = await _db.GetAllYears();
+        var currentYear = Years.FirstOrDefault(x => x.Date.Year == DateTime.Now.Year);
+        if (currentYear is not null)
+        {
+            await ExpandYear(currentYear);
+            CurrentYear = currentYear;
+            var currentMonth = currentYear.Operations.FirstOrDefault(x => x.Date.Month == DateTime.Now.Month);
+            if (currentMonth is not null)
+            {
+                CurrentMonth = currentMonth;
+                await ExpandMonth(currentMonth);
+                var currentDay = currentMonth.Operations.FirstOrDefault(x => x.Date.Day == DateTime.Now.Day);
+                if (currentDay is not null)
+                {
+                    await ExpandDay(currentDay);
+                    CurrentDay = currentDay;
+                }
+            }
+        }
+    }
+
+    private async Task ExpandYear(OperationYearViewModel year)
+    {
+        if (year.Operations is null || year.Operations.Count < 1)
+        {
+            year.Operations = await _db.GetAllMonthsForSpecificYear(year.Date.Year);
+        }
+        else if (year.Date.Year != DateTime.Now.Year)
+        {
+            year.Operations.Clear();
+        }
+        StateHasChanged();
+    }
+
+    private async Task ExpandMonth(OperationMonthViewModel month)
+    {
+        if (month.Operations is null || month.Operations.Count < 1)
+        {
+            month.Operations = await _db.GetAllDaysForSpecificMonth(month.Date.Year, month.Date.Month);
+        }
+        else if (month.Date.Month != DateTime.Now.Month)
+        {
+            month.Operations.Clear();
+        }
+        StateHasChanged();
+    }
+
+    private async Task ExpandDay(OperationDayViewModel day)
+    {
+        if (day.Operations is null || day.Operations.Count < 1)
+        {
+            day.Operations = await _db.GetAllOperationsForSpecificDay(day.Date.Year, day.Date.Month, day.Date.Day);
+        }
+        else if (day.Date.Day != DateTime.Now.Day)
+        {
+            day.Operations.Clear();
+        }
+        StateHasChanged();
+    }
+
+    // New Methods for Expansion Logic
+
+    private bool ShouldExpandYear(OperationYearViewModel year)
+    {
+        return CurrentYear?.Date == year.Date && ApplicationSettings.ExpandTheCurrentDateOnStart;
+    }
+
+    private bool ShouldExpandMonth(OperationMonthViewModel month)
+    {
+        return CurrentMonth?.Date == month.Date && ApplicationSettings.ExpandTheCurrentDateOnStart;
+    }
+
+    private bool ShouldExpandDay(OperationDayViewModel day)
+    {
+        return CurrentDay?.Date == day.Date && ApplicationSettings.ExpandTheCurrentDateOnStart;
+    }
+
+    private string GetYearStyle(OperationYearViewModel year)
+    {
+        return CurrentYear?.Date == year.Date ? "operation-current-date" : GetEvenOrOddStyle(year.Date.Year);
+    }
+
+    private string GetMonthStyle(OperationMonthViewModel month)
+    {
+        return CurrentMonth?.Date == month.Date ? "operation-current-date" : GetEvenOrOddStyle(month.Date.Month);
+    }
+
+    private string GetDayStyle(OperationDayViewModel day)
+    {
+        return CurrentDay?.Date == day.Date ? "operation-current-date" : GetEvenOrOddStyle(day.Date.Day);
+    }
+
+    private string GetEvenOrOddStyle(int date)
+    {
+        return date % 2 == 0 ? "operation-even-year" : "operation-odd-year";
     }
 }
