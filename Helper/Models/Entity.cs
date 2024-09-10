@@ -5,6 +5,7 @@ namespace Helper.Models;
 
 public class Entity
 {
+    [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
 
     // I chose the format so that I can use strftime in my sqlite queries

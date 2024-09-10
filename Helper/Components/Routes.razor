@@ -11,8 +11,8 @@
 
         <MudStack Row="false" Wrap="Wrap.Wrap" Justify="Justify.Center" AlignItems="AlignItems.Center">
             <MudSpacer />
-            <MudText Typo="Typo.h5">You have lost your way buddy 😁</MudText>
-            <MudText Typo="Typo.h6">Click Here to go back to a save place</MudText>
+            <MudText Typo="Typo.body1">You have lost your way buddy 😁</MudText>
+            <MudText Typo="Typo.body2">Click Here to go back to a save place</MudText>
             <MudButton OnClick="GoBack" Color="@(IsProcessing ? Color.Primary : Color.Success)" DropShadow="true" Ripple="true" Variant="Variant.Filled" Disabled="IsProcessing">
                 @if (IsProcessing)
                 {

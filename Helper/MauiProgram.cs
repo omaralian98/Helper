@@ -1,8 +1,9 @@
-﻿using Helper.Data;
+﻿global using System.Globalization;
+
+using Helper.Data;
 using Helper.ViewModel;
 using Microsoft.Extensions.Logging;
 using MudBlazor.Services;
-
 namespace Helper
 {
     public static class MauiProgram

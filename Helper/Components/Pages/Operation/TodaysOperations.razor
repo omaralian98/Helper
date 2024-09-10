@@ -1,0 +1,28 @@
+﻿@page "/"
+@page "/{DayOffSet:int}"
+@inject NavigationManager Nav
+
+<MudContainer Style="height: 100%;">
+    <MudStack Row="true" Justify="Justify.Center" Spacing="5" AlignItems="AlignItems.Center">
+        <MudText Typo="Typo.h4">@CurrentDate.ToString("ddd", new CultureInfo("ar-sy"))</MudText>
+        <MudText Typo="Typo.h5">@CurrentDate.ToShortDateString()</MudText>
+        <MudButton EndIcon="@Icons.Material.Filled.ArrowBack" Variant="Variant.Outlined" OnClick="@(() => Nav.NavigateTo($"/{DayOffSet + 1}"))">
+            عودة يوم
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    [Parameter]
+    public int DayOffSet { get; set; } = 0;
+
+    private DateTime CurrentDate { get; set; } = DateTime.Today;
+
+    protected async override Task OnParametersSetAsync()
+    {
+        if (DayOffSet > 0)
+        {
+            CurrentDate = DateTime.Today.AddDays(-DayOffSet);
+        }
+    }
+}

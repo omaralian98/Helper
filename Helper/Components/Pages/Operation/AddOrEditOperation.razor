@@ -1,4 +1,5 @@
 ﻿@page "/operation/add"
+@page "/operation/edit/{Id:int}"
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject OperationRepository _db
@@ -88,6 +89,10 @@
 </script>
 
 @code {
+
+    [Parameter]
+    public int Id { get; set; }
+
     [SupplyParameterFromForm]
     public Operation Operation { get; set; } = new();
 
@@ -106,6 +111,14 @@
             Date = Operation.Date;
         }
         base.OnAfterRender(firstRender);
+    }
+
+    protected async override Task OnParametersSetAsync()
+    {
+        if (Id > 0)
+        {
+            Operation = await _db.GetAsync(Id);
+        }
     }
 
     public async Task Show()

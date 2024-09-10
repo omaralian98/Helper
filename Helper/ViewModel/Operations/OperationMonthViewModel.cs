@@ -7,5 +7,5 @@ public class OperationMonthViewModel
     public long TotalCost { get; set; }
     public int OperationCount { get; set; }
 
-    public override string ToString() => Date.ToString("MMMM");
+    public override string ToString() => Date.ToString("MMM", new CultureInfo("ar-sy"));
 }

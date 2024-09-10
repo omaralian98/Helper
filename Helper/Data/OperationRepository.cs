@@ -19,8 +19,13 @@ public class OperationRepository : HelperDatabase<Operation>
             LIMIT {count};";
 
 
-        var operations = await Database.QueryAsync<Operation>(query);
-        return operations.Select(op => op.Title).ToList();
+        try
+        {
+            var operations = await Database.QueryAsync<Operation>(query);
+            return operations.Select(op => op.Title).ToList();
+        }
+        catch { }
+        return [];
     }
 
     public async Task<List<OperationYearViewModel>> GetAllYears()
@@ -33,22 +38,26 @@ public class OperationRepository : HelperDatabase<Operation>
             FROM 
 	            Operation 
             GROUP BY Year
-            ORDER BY Year;";
-
-        var result = await Database.QueryAsync<GetAllYears>(query);
+            ORDER BY Year DESC;";
 
         var yearResults = new List<OperationYearViewModel>();
 
-        foreach (var year in result)
+        try
         {
-            yearResults.Add(new OperationYearViewModel
+            var result = await Database.QueryAsync<GetAllYears>(query);
+
+            foreach (var year in result)
             {
-                Date = new DateTime(year.Year, 1, 1),
-                TotalCost = year.TotalCost,
-                OperationCount = year.OperationCount,
-                Operations = []
-            });
+                yearResults.Add(new OperationYearViewModel
+                {
+                    Date = new DateTime(year.Year, 1, 1),
+                    TotalCost = year.TotalCost,
+                    OperationCount = year.OperationCount,
+                    Operations = []
+                });
+            }
         }
+        catch { }
 
         return yearResults;
     }
@@ -81,21 +90,25 @@ public class OperationRepository : HelperDatabase<Operation>
             GROUP BY Month
             ORDER BY Month;";
 
-        var result = await Database.QueryAsync<GetAllMonthsForSpecificYear>(query, year.ToString());
-
         var monthResults = new List<OperationMonthViewModel>();
 
-        foreach (var month in result)
+        try
         {
-            monthResults.Add(new OperationMonthViewModel
-            {
-                Date = new DateTime(year, month.Month, 1),
-                TotalCost = month.TotalCost,
-                OperationCount = month.OperationCount,
-                Operations = []
-            });
-        }
+            var result = await Database.QueryAsync<GetAllMonthsForSpecificYear>(query, year.ToString());
 
+
+            foreach (var month in result)
+            {
+                monthResults.Add(new OperationMonthViewModel
+                {
+                    Date = new DateTime(year, month.Month, 1),
+                    TotalCost = month.TotalCost,
+                    OperationCount = month.OperationCount,
+                    Operations = []
+                });
+            }
+        }
+        catch { }
         return monthResults;
     }
 
@@ -129,21 +142,25 @@ public class OperationRepository : HelperDatabase<Operation>
             GROUP BY Day
             ORDER BY Day;";
 
-        var result = await Database.QueryAsync<GetAllDaysForSpecificMonth>(query, year.ToString(), month.ToString());
-
         var dayResults = new List<OperationDayViewModel>();
 
-        foreach (var day in result)
+        try
         {
-            dayResults.Add(new OperationDayViewModel
-            {
-                Date = new DateTime(year, month, day.Day),
-                TotalCost = day.TotalCost,
-                OperationCount = day.OperationCount,
-                Operations = []
-            });
-        }
+            var result = await Database.QueryAsync<GetAllDaysForSpecificMonth>(query, year.ToString(), month.ToString());
 
+
+            foreach (var day in result)
+            {
+                dayResults.Add(new OperationDayViewModel
+                {
+                    Date = new DateTime(year, month, day.Day),
+                    TotalCost = day.TotalCost,
+                    OperationCount = day.OperationCount,
+                    Operations = []
+                });
+            }
+        }
+        catch { }
         return dayResults;
     }
 
@@ -162,8 +179,13 @@ public class OperationRepository : HelperDatabase<Operation>
                 strftime('%m', DateAsString) = ? 
                 AND 
                 strftime('%d', DateAsString) = ?;";
+        try
+        {
 
-        var operations = await Database.QueryAsync<Operation>(query, year.ToString(), month.ToString("D2"), day.ToString("D2"));
-        return operations;
+            var operations = await Database.QueryAsync<Operation>(query, year.ToString(), month.ToString("D2"), day.ToString("D2"));
+            return operations;
+        }
+        catch { }
+        return [];
     }
 }
