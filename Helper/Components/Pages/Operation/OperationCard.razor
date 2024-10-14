@@ -1,0 +1,26 @@
+﻿@inject NavigationManager Nav
+
+<MudTimelineItem Size="Size.Small" Color="Color.Error" Elevation="25">
+    <ItemContent>
+        <MudCard Style="cursor: pointer;" @onclick="@(() => View(Operation.Id))" Class="operation-day-card" Outlined="true" Elevation="25">
+            <MudCardContent>
+                <MudText Typo="Typo.h6">@Operation.Title <MudText Typo="Typo.body1" Inline="true">@(Operation.Description == null ? "" : " - " + Operation.Description)</MudText></MudText>
+                
+                <MudText Typo="Typo.body1">
+                    الكمية: @Operation.Amount.ToCurrencyString()
+                </MudText>
+                <MudText Typo="Typo.body2">التاريخ: @Operation.Date.ToString("tt hh:mm")</MudText>
+            </MudCardContent>
+        </MudCard>
+    </ItemContent>
+</MudTimelineItem>
+
+@code {
+    [Parameter]
+    public Record Operation { get; set; }
+
+    private void View(int Id)
+    {
+        Nav.NavigateTo($"operation/view/{Id}");
+    }
+}

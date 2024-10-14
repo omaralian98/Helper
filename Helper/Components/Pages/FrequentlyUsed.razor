@@ -10,9 +10,6 @@
             </MudText>
         </MudStack>
         <MudStack Row="true" AlignItems="AlignItems.Center" Justify="Justify.Center" Spacing="2" Wrap="Wrap.Wrap">
-            @{
-                #pragma warning disable 8602
-            }
             @foreach (var value in ValuesList)
             {
                 <MudButton Color="Color.Secondary"
@@ -21,9 +18,6 @@
                            OnClick="@(() => UpdateValue(value))">
                     @value.ToString()
                 </MudButton>
-            }
-            @{
-                #pragma warning restore 8602
             }
         </MudStack>
     </MudPaper>

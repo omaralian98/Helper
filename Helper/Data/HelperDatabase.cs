@@ -20,19 +20,7 @@ public class HelperDatabase<T> where T : Entity, new()
 
         Database = new SQLiteAsyncConnection(Constants.DatabasePath, Constants.Flags);
         await Database.CreateTableAsync<T>();
-
-        //// Create an index on the Date column for all entities that have a Date property
-        //await CreateIndexOnDateAsync();
     }
-
-    //private async Task CreateIndexOnDateAsync()
-    //{
-    //    var tableName = typeof(T).Name;
-
-    //    var createIndexSql = $"CREATE INDEX IF NOT EXISTS IX_{tableName}_Date ON {tableName} (Date);";
-
-    //    var res = await Database.ExecuteAsync(createIndexSql);
-    //}
 
     private async Task DropTables()
     {
@@ -47,22 +35,35 @@ public class HelperDatabase<T> where T : Entity, new()
         catch { }
     }
 
-    public async Task<List<T>> GetAllAsync()
+    public virtual async Task<List<T>> GetAllAsync()
     {
         return await Database.Table<T>().ToListAsync();
     }
 
-    public async Task<T> GetAsync(int id)
+    public virtual async Task<T?> GetAsync(int? id = null)
     {
-        return await Database.Table<T>().Where(i => i.Id == id).FirstOrDefaultAsync();
+        var test = await Database.Table<T>().ToListAsync();
+        if (id is not null)
+        {
+            return await Database.Table<T>().Where(i => i.Id == id).FirstOrDefaultAsync();
+        }
+        else
+        {
+            return await Database.Table<T>().FirstOrDefaultAsync();
+        }
     }
 
-    public async Task<int> SaveAsync(T operation)
+    public virtual async Task<int> AddAsync(T operation)
     {
-        if (operation.Id != 0)
-            return await Database.UpdateAsync(operation);
-        else
+        try
+        {
             return await Database.InsertAsync(operation);
+
+        }
+        catch
+        {
+            return 0;
+        }
     }
 
     public async Task<int> DeleteAsync(T operation)
@@ -70,9 +71,9 @@ public class HelperDatabase<T> where T : Entity, new()
         return await Database.DeleteAsync(operation);
     }
 
-    public async Task<int> GetFirst() => await GetFirstOrLast(last: false);
+    public virtual async Task<int> GetFirst() => await GetFirstOrLast(last: false);
 
-    public async Task<int> GetLast() => await GetFirstOrLast(last: true);
+    public virtual async Task<int> GetLast() => await GetFirstOrLast(last: true);
 
     private async Task<int> GetFirstOrLast(bool last)
     {

@@ -10,9 +10,9 @@ public static class ApplicationSettings
 
     public static long OperationDefaultValue { get; set; } = 1_000;
 
-    public static long InventoryDefaultValue { get; set; } = 10_000;
-
     public static bool ExpandTheCurrentDateOnStart { get; set; } = false;
 
     public static int NumberOfYearToShow { get; set; } = 5;
+
+    public static string Currency { get; set; } = "ل.س";
 }

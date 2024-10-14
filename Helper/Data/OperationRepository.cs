@@ -3,25 +3,56 @@ using Helper.ViewModel;
 using Helper.ViewModel.Operations;
 namespace Helper.Data;
 
-public class OperationRepository : HelperDatabase<Operation>
+public class OperationRepository(InventoryRepository inventoryRepository) : HelperDatabase<Record>
 {
+    public override async Task<int> AddAsync(Record operation)
+    {
+        if (string.IsNullOrWhiteSpace(operation.Title))
+            return 0;
+
+        var currentBalance = (await inventoryRepository.GetAsync())?.Balance;
+        if (currentBalance < operation.Amount)
+            return 0;
+
+        operation.RecordType = RecordType.Operation;
+        return await base.AddAsync(operation);
+    }
+
+    public async Task AddOperationTrigger()
+    {
+        var query = $@"
+            CREATE TRIGGER IF NOT EXISTS OperationTrigger
+            BEFORE INSERT ON Record
+            FOR EACH ROW
+            WHEN NEW.RecordType = 0  -- 0 corresponds to RecordType.Operation
+            BEGIN
+                UPDATE Inventory
+                SET Balance = Balance - NEW.Amount
+                WHERE Id = (SELECT Id FROM Inventory LIMIT 1);
+            END;
+        ";
+        await Database.ExecuteAsync(query);
+    }
+
     public async Task<List<string>> GetMostFrequentlyUsedOperations(int count)
     {
         var query = $@"
             SELECT 
                 *
             FROM 
-                [{nameof(Operation)}]
+                [{nameof(Record)}]
+            WHERE
+                [{nameof(Record.RecordType)}] = {((int)RecordType.Operation)}
             GROUP BY 
-                [{nameof(Operation.Title)}]
+                [{nameof(Record.Title)}]
             ORDER BY 
-                COUNT(*) DESC, [{nameof(Operation.DateAsString)}] DESC
+                COUNT(*) DESC, [{nameof(Record.DateAsString)}] DESC
             LIMIT {count};";
 
 
         try
         {
-            var operations = await Database.QueryAsync<Operation>(query);
+            var operations = await Database.QueryAsync<Record>(query);
             return operations.Select(op => op.Title).ToList();
         }
         catch { }
@@ -30,13 +61,15 @@ public class OperationRepository : HelperDatabase<Operation>
 
     public async Task<List<OperationYearViewModel>> GetAllYears()
     {
-        var query = @"
+        var query = $@"
             SELECT 
 	            strftime('%Y', DateAsString) AS Year,
-	            SUM(Cost) AS TotalCost, 
+	            SUM(Amount) AS TotalAmount, 
 	            COUNT(*) AS OperationCount
             FROM 
-	            Operation 
+                [{nameof(Record)}]
+            WHERE
+                [{nameof(Record.RecordType)}] = {((int)RecordType.Operation)}
             GROUP BY Year
             ORDER BY Year DESC;";
 
@@ -51,7 +84,7 @@ public class OperationRepository : HelperDatabase<Operation>
                 yearResults.Add(new OperationYearViewModel
                 {
                     Date = new DateTime(year.Year, 1, 1),
-                    TotalCost = year.TotalCost,
+                    TotalAmount = year.TotalAmount,
                     OperationCount = year.OperationCount,
                     Operations = []
                 });
@@ -62,30 +95,18 @@ public class OperationRepository : HelperDatabase<Operation>
         return yearResults;
     }
 
-    //public async Task<OperationYearViewModel> GetYear(int year)
-    //{
-    //    var yearViewModel = new OperationYearViewModel
-    //    {
-    //        Date = new DateTime(year, 1, 1),
-    //        Operations = await GetAllMonthsForSpecificYear(year)
-    //    };
-
-    //    yearViewModel.OperationCount = yearViewModel.Operations.Sum(d => d.OperationCount);
-    //    yearViewModel.TotalCost = yearViewModel.Operations.Sum(d => d.TotalCost);
-
-    //    return yearViewModel;
-    //}
-
     public async Task<List<OperationMonthViewModel>> GetAllMonthsForSpecificYear(int year)
     {
-        var query = @"
+        var query = $@"
             SELECT 
 	            strftime('%m', DateAsString) AS Month,
-	            SUM(Cost) AS TotalCost, 
+	            SUM(Amount) AS TotalAmount, 
 	            COUNT(*) AS OperationCount
             FROM 
-	            Operation 
-            WHERE 
+                [{nameof(Record)}]
+            WHERE
+                [{nameof(Record.RecordType)}] = {((int)RecordType.Operation)} 
+                AND
 	            CAST(strftime('%Y', DateAsString) AS INTEGER) = ?
             GROUP BY Month
             ORDER BY Month;";
@@ -102,7 +123,7 @@ public class OperationRepository : HelperDatabase<Operation>
                 monthResults.Add(new OperationMonthViewModel
                 {
                     Date = new DateTime(year, month.Month, 1),
-                    TotalCost = month.TotalCost,
+                    TotalAmount = month.TotalAmount,
                     OperationCount = month.OperationCount,
                     Operations = []
                 });
@@ -112,30 +133,18 @@ public class OperationRepository : HelperDatabase<Operation>
         return monthResults;
     }
 
-    //public async Task<OperationMonthViewModel> GetMonthForSpecificYear(int year, int month)
-    //{
-    //    var monthViewModel = new OperationMonthViewModel
-    //    {
-    //        Date = new DateTime(year, month, 1),
-    //        Operations = await GetAllDaysForSpecificMonth(year, month)
-    //    };
-
-    //    monthViewModel.OperationCount = monthViewModel.Operations.Sum(d => d.OperationCount);
-    //    monthViewModel.TotalCost = monthViewModel.Operations.Sum(d => d.TotalCost);
-
-    //    return monthViewModel;
-    //}
-
     public async Task<List<OperationDayViewModel>> GetAllDaysForSpecificMonth(int year, int month)
     {
-        var query = @"
+        var query = $@"
             SELECT 
 	            strftime('%d', DateAsString) AS Day,
-	            SUM(Cost) AS TotalCost, 
+	            SUM(Amount) AS TotalAmount, 
 	            COUNT(*) AS OperationCount
             FROM 
-	            Operation 
-            WHERE 
+                [{nameof(Record)}]
+            WHERE
+                [{nameof(Record.RecordType)}] = {((int)RecordType.Operation)}
+                AND
 	            CAST(strftime('%Y', DateAsString) AS INTEGER) = ?
 	            AND
 	            CAST(strftime('%m', DateAsString) AS INTEGER) = ?
@@ -154,7 +163,7 @@ public class OperationRepository : HelperDatabase<Operation>
                 dayResults.Add(new OperationDayViewModel
                 {
                     Date = new DateTime(year, month, day.Day),
-                    TotalCost = day.TotalCost,
+                    TotalAmount = day.TotalAmount,
                     OperationCount = day.OperationCount,
                     Operations = []
                 });
@@ -166,14 +175,19 @@ public class OperationRepository : HelperDatabase<Operation>
 
 
 
-    public async Task<List<Operation>> GetAllOperationsForSpecificDay(int year, int month, int day)
+    public async Task<List<Record>> GetAllOperationsForSpecificDay(int year, int month, int day, bool getIncome = false)
     {
-        var query = @"
+        var query = $@"
             SELECT 
                 * 
             FROM 
-                Operation
-            WHERE 
+                [{nameof(Record)}]
+            WHERE
+                {(
+                    getIncome ? "" : 
+                    $@"[{nameof(Record.RecordType)}] = {((int)RecordType.Operation)}
+                    AND"
+                )}
                 strftime('%Y', DateAsString) = ? 
                 AND 
                 strftime('%m', DateAsString) = ? 
@@ -181,8 +195,7 @@ public class OperationRepository : HelperDatabase<Operation>
                 strftime('%d', DateAsString) = ?;";
         try
         {
-
-            var operations = await Database.QueryAsync<Operation>(query, year.ToString(), month.ToString("D2"), day.ToString("D2"));
+            var operations = await Database.QueryAsync<Record>(query, year.ToString(), month.ToString("D2"), day.ToString("D2"));
             return operations;
         }
         catch { }

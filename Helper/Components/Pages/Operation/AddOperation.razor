@@ -1,8 +1,9 @@
 ﻿@page "/operation/add"
-@page "/operation/edit/{Id:int}"
+
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
 @inject OperationRepository _db
+@inject InventoryRepository _inventory
 @inject NavigationManager Nav
 @using System.Globalization
 
@@ -33,14 +34,14 @@
                               Margin="Margin.Dense" />
 
                 @* --------------------------------------------------- *@
-                <ValidationMessage For="() => Operation.Cost" />
+                <ValidationMessage For="() => Operation.Amount" />
                 <MudNumericField T="long"
-                                 @bind-Value="Operation.Cost"
+                                 @bind-Value="Operation.Amount"
                                  Label="القيمة المدفوعة"
+                                 Culture="@CultureInfo.GetCultureInfo("en-Us")"
                                  Step="1000"
                                  Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Format="#,##0" />
+                                 Margin="Margin.Dense" />
                 @* --------------------------------------------------- *@
 
                 <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px; overflow-x: hidden;">
@@ -82,19 +83,10 @@
     </MudPaper>
 </MudPaper>
 
-<script>
-    function Test() {
-        document.getElementById("ShowAttachments").classList.toggle("Show");
-    }
-</script>
 
 @code {
-
-    [Parameter]
-    public int Id { get; set; }
-
     [SupplyParameterFromForm]
-    public Operation Operation { get; set; } = new();
+    public Record Operation { get; set; } = new();
 
     public bool ShowAttachments { get; set; } = false;
 
@@ -111,14 +103,6 @@
             Date = Operation.Date;
         }
         base.OnAfterRender(firstRender);
-    }
-
-    protected async override Task OnParametersSetAsync()
-    {
-        if (Id > 0)
-        {
-            Operation = await _db.GetAsync(Id);
-        }
     }
 
     public async Task Show()
@@ -142,7 +126,7 @@
     {
         var oldDate = Operation.Date;
         Operation.Date = Date!.Value;
-        bool IsSuccessFul = (await _db.SaveAsync(Operation)) > 0;
+        bool IsSuccessFul = (await _db.AddAsync(Operation)) > 0;
         if (IsSuccessFul)
         {
             Snackbar.Add($"تم إضافة العملية بنجاح\n{Operation.Date}", Severity.Success);
@@ -152,7 +136,16 @@
         else
         {
             Operation.Date = oldDate;
-            Snackbar.Add("فشلت عملية الإضافة", Severity.Error);
+
+            var currentInventory = await _inventory.GetAsync();
+            if (currentInventory?.Balance < Operation.Amount)
+            {
+                Snackbar.Add("فشلت عملية الإضافة بسبب عدم توفر رصيد كافي", Severity.Error);
+            }
+            else
+            {
+                Snackbar.Add("فشلت عملية الإضافة", Severity.Error);
+            }
         }
     }
 }

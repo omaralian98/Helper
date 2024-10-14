@@ -1,9 +1,7 @@
 ﻿using SQLite;
-using static System.Runtime.InteropServices.JavaScript.JSType;
-
 namespace Helper.Models;
 
-public class Entity
+public abstract class Entity
 {
     [PrimaryKey, AutoIncrement]
     public int Id { get; set; }
@@ -11,6 +9,7 @@ public class Entity
     // I chose the format so that I can use strftime in my sqlite queries
     private const string DATE_FORMAT = "yyyy-MM-dd HH:mm:ss";
 
+    [Ignore]
     public DateTime Date
     {
         get => DateTime.ParseExact(DateAsString, DATE_FORMAT, null);
@@ -22,4 +21,6 @@ public class Entity
 
     [Indexed]
     public string DateAsString { get; set; } = DateTime.Now.ToString(DATE_FORMAT);
+
+    public bool IsDeleted { get; set; } = false;
 }

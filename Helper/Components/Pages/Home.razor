@@ -1,0 +1,198 @@
+﻿@page "/"
+@inject OperationRepository _db
+@inject IJSRuntime JS
+@inject NavigationManager Nav
+@inject IDialogService DialogService
+
+
+<MudStack Row="true" Justify="Justify.SpaceBetween" Reverse="true">
+    <MudStack>
+        <MudIconButton Size="Size.Small"
+                       Icon="@Icons.Material.Filled.ArrowBack"
+                       Variant="Variant.Outlined"
+                       OnClick="GoBackward" />
+    </MudStack>
+    <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" Spacing="2">
+        <MudIconButton Size="Size.Small"
+                       Icon="@Icons.Material.Filled.ArrowForward"
+                       Variant="Variant.Outlined"
+                       Disabled="@IsDisabled"
+                       OnClick="GoForward" />
+
+        <MudButton Size="Size.Small"
+                   IconSize="Size.Small"
+                   StartIcon="@Icons.Material.Filled.ArrowForward"
+                   Variant="Variant.Outlined"
+                   Disabled="@IsDisabled"
+                   OnClick="GoToToday">
+            العودة لليوم الحالي
+        </MudButton>
+    </MudStack>
+</MudStack>
+<MudStack Row="false" Spacing="3">
+    <MudStack Row="false" Spacing="0">
+        <MudStack Row="true" Justify="Justify.Center" Spacing="3" AlignItems="AlignItems.Center">
+            <MudText Typo="Typo.h4">@CurrentDate.ToString("ddd", new CultureInfo("ar-sy"))</MudText>
+            <MudElement HtmlTag="div" Style="width: 135px;">
+                <MudDatePicker Variant="Variant.Text"
+                               Date="@CurrentDate"
+                               DateChanged="GoToASpecificDate"
+                               PickerVariant="PickerVariant.Dialog"
+                               Elevation="10"
+                               MaxDate="DateTime.Now"
+                               ImmediateText="true"
+                               Culture="@CultureInfo.GetCultureInfo("ar-sy")" />
+            </MudElement>
+        </MudStack>
+        <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px; overflow-x: hidden;">
+            <MudPaper Elevation="5" Height="100%" Width="100%" Outlined="true" Square="true" Style="padding: 10px 10px;">
+                <MudContainer>
+                    <MudPaper Elevation="5" Height="100%" Width="100%" Outlined="true" Square="true" Style="padding: 10px 10px;">
+                        <MudStack Row="false" Justify="Justify.Center" Spacing="3">
+                            <MudStack Row="false" Spacing="0">
+                                <MudText Typo="Typo.body1">عرض عمليات بين تاريخين محددين</MudText>
+                                <MudStack Row="true" Wrap="Wrap.Wrap">
+                                    <MudDatePicker Variant="Variant.Text"
+                                                   PickerVariant="PickerVariant.Dialog"
+                                                   Elevation="10"
+                                                   Label="تاريخ البداية"
+                                                   IconSize="Size.Small"
+                                                   MaxDate="DateTime.Now"
+                                                   ImmediateText="true"
+                                                   Culture="@CultureInfo.GetCultureInfo("ar-sy")" />
+
+                                    <MudDatePicker Variant="Variant.Text"
+                                                   PickerVariant="PickerVariant.Dialog"
+                                                   Elevation="10"
+                                                   Label="تاريخ النهاية"
+                                                   IconSize="Size.Small"
+                                                   MaxDate="DateTime.Now"
+                                                   ImmediateText="true"
+                                                   Culture="@CultureInfo.GetCultureInfo("ar-sy")" />
+                                </MudStack>
+                            </MudStack>
+                        </MudStack>
+                    </MudPaper>
+                </MudContainer>
+            </MudPaper>
+        </MudElement>
+
+        <MudItem Style="align-self: center;">
+            <MudIconButton Color="Color.Surface"
+                           Icon="@(ShowAttachments ? Icons.Material.Filled.ArrowUpward : Icons.Material.Filled.ArrowDownward)"
+                           OnClick="Show" Size="Size.Small" />
+        </MudItem>
+    </MudStack>
+
+    <MudStack Row="false">
+        @if (Operations.Count > 0)
+        {
+            <MudTimeline TimelineOrientation="TimelineOrientation.Vertical"
+                         TimelinePosition="TimelinePosition.Right">
+                @foreach (var operation in Operations)
+                {
+                    @if (operation.RecordType == RecordType.Operation)
+                    {
+                        <OperationCard Operation="operation" />
+                    }
+                    else
+                    {
+                        <IncomeCard Income="operation" />
+                    }
+                }
+            </MudTimeline>
+        }
+    </MudStack>
+</MudStack>
+
+
+<MudFab Style="position: sticky; bottom: 5px; left: 5px; float: left;"
+        Color="Color.Primary"
+        StartIcon="@Icons.Material.Filled.Add"
+        OnClick="OpenDialogAsync" />
+
+@code {
+
+    public List<Record> Operations { get; set; } = [];
+
+    private DateTime _CurrentDate = DateTime.Today;
+
+    public DateTime CurrentDate
+    {
+        get => _CurrentDate;
+        set
+        {
+            if (value <= DateTime.Now)
+            {
+                _CurrentDate = value;
+                _ = Update();
+            }
+        }
+    }
+
+
+    public bool IsDisabled => CurrentDate == DateTime.Today;
+
+    protected async override Task OnInitializedAsync()
+    {
+        await Update();
+        await base.OnInitializedAsync();
+    }
+
+    public async Task Update()
+    {
+        Operations = await _db.GetAllOperationsForSpecificDay(CurrentDate.Year, CurrentDate.Month, CurrentDate.Day, true);
+        StateHasChanged();
+    }
+
+    public bool ShowAttachments { get; set; } = false;
+
+    public async Task Show()
+    {
+        await JS.InvokeVoidAsync("Test");
+        ShowAttachments = !ShowAttachments;
+
+        await Task.Delay(200).ContinueWith(_ =>
+        {
+        });
+    }
+
+    private Task OpenDialogAsync()
+    {
+        var options = new DialogOptions
+            {
+                CloseOnEscapeKey = true,
+                BackdropClick = true,
+                CloseButton = true,
+                Position = DialogPosition.Center,
+                FullWidth = true,
+                BackgroundClass = "add-dialog-class"
+            };
+
+        return DialogService.ShowAsync<AddDialog>("Simple Dialog", options);
+    }
+
+    public void GoToToday()
+    {
+        CurrentDate = DateTime.Today;
+    }
+
+    public void GoForward()
+    {
+        CurrentDate = CurrentDate.AddDays(1);
+    }
+
+    public void GoBackward()
+    {
+        CurrentDate = CurrentDate.AddDays(-1);
+    }
+
+    public async Task GoToASpecificDate(DateTime? date)
+    {
+        if (date is not null)
+        {
+            CurrentDate = date.Value;
+            await Update();
+        }
+    }
+}

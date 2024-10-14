@@ -1,0 +1,22 @@
+﻿@inject NavigationManager Nav
+
+<MudTimelineItem Size="Size.Small" Color="Color.Success" Elevation="25">
+    <MudAlert Style="cursor: pointer;" OnClick="@(() => View(Income.Id))" Severity="Severity.Success" Variant="Variant.Filled" Dense="true" ContentAlignment="HorizontalAlignment.Right">
+        <MudText>
+            تم إضافة @Income.Amount.ToCurrencyString()
+        </MudText>
+        <MudText>
+            @Income.Description
+        </MudText>
+    </MudAlert>
+</MudTimelineItem>
+
+@code {
+    [Parameter]
+    public Record Income { get; set; }
+
+    private void View(int Id)
+    {
+        Nav.NavigateTo($"income/view/{Id}");
+    }
+}

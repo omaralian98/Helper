@@ -1,7 +1,7 @@
-﻿@page "/inventory/add"
+﻿@page "/income/add"
 @inject IJSRuntime JS
 @inject ISnackbar Snackbar
-@inject InventoryRepository _db
+@inject IncomeRepository _db
 @inject NavigationManager Nav
 @using System.Globalization
 
@@ -14,36 +14,37 @@
     <MudStack Row="true" Justify="Justify.Center" AlignItems="AlignItems.Center" StretchItems="StretchItems.All" Spacing="2">
         <FrequentlyUsed Title="الواردت الأكثر تكراراً"
                         T="long"
-                        @bind-Value="Inventory.Income"
+                        @bind-Value="income.Amount"
                         ShowCount="4"
                         GetValues="@_db.GetMostFrequentlyAddedIncomes" />
     </MudStack>
     <MudPaper Elevation="5" Outlined="true">
-        <EditForm Model="Inventory" OnValidSubmit="Submit">
+        <EditForm Model="income" OnValidSubmit="Submit">
             <DataAnnotationsValidator />
             <MudStack Row="false" Spacing="3" Justify="Justify.Center">
 
-                <ValidationMessage For="() => Inventory.Income" />
+                <ValidationMessage For="() => income.Amount" />
                 <MudNumericField T="long"
                                  Label="الوارد"
-                                 @bind-Value="Inventory.Income"
+                                 @bind-Value="income.Amount"
                                  Step="1000"
                                  Variant="Variant.Outlined"
-                                 Margin="Margin.Dense"
-                                 Format="#,##0" />
-                @* --------------------------------------------------- *@
+                                 Culture="@CultureInfo.GetCultureInfo("en-Us")"
+                                 Format="N0"
+                                 Margin="Margin.Dense" />
+
 
                 <MudElement HtmlTag="div" id="ShowAttachments" Style="margin: 5px; overflow-x: hidden;">
                     <MudStack Row="false" Justify="Justify.FlexStart" AlignItems="AlignItems.Stretch" Spacing="3">
                         <MudTextField T="string"
-                                      @bind-Value="Inventory.Description"
-                                      For="() => Inventory.Description"
+                                      @bind-Value="income.Description"
+                                      For="() => income.Description"
                                       Placeholder="[اختياري] ادخل تفاصيل"
                                       Lines="5"
                                       Variant="Variant.Outlined" />
                     </MudStack>
                 </MudElement>
-                @* --------------------------------------------------- *@
+
 
 
                 <MudItem Style="align-self: center;">
@@ -57,15 +58,9 @@
     </MudPaper>
 </MudPaper>
 
-<script>
-    function Test() {
-        document.getElementById("ShowAttachments").classList.toggle("Show");
-    }
-</script>
-
 @code {
     [SupplyParameterFromForm]
-    public Models.Inventory Inventory { get; set; } = new();
+    public Record income { get; set; } = new();
 
     public bool ShowAttachments { get; set; } = false;
 
@@ -78,7 +73,7 @@
         {
             if (ApplicationSettings.ResetContentAfterClosing)
             {
-                Inventory.Description = null;
+                income.Description = null;
             }
         });
     }
@@ -86,12 +81,12 @@
 
     public async Task Submit()
     {
-        bool IsSuccessFul = (await _db.SaveAsync(Inventory)) > 0;
+        bool IsSuccessFul = (await _db.AddAsync(income)) > 0;
         if (IsSuccessFul)
         {
-            Snackbar.Add($"تم إضافة {Inventory.Income} كوارد", Severity.Success);
+            Snackbar.Add($"تم إضافة {income.Amount} كوارد", Severity.Success);
             if (ApplicationSettings.RedirectToHomeAfterSuccessfullyAddingANewOperation)
-                Nav.NavigateTo("/inventory");
+                Nav.NavigateTo("/income");
         }
         else
         {

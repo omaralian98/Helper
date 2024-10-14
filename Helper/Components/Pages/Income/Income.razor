@@ -1,0 +1,25 @@
+﻿@page "/income"
+
+
+<MudContainer>
+    <MudStack Row="false" AlignItems="AlignItems.Stretch">
+        <MudText Typo="Typo.h5">
+            الرصيد المتبقي: @Inventory?.Balance.ToCurrencyString()
+        </MudText>
+        <MudButton Variant="Variant.Filled" Color="Color.Primary" StartIcon="@Icons.Material.Filled.Add" Href="/income/add">
+            اضف
+        </MudButton>
+    </MudStack>
+</MudContainer>
+
+@code {
+    [Inject]
+    public InventoryRepository _db { get; set; }
+
+    public Inventory? Inventory { get; set; } = null;
+
+    protected async override Task OnInitializedAsync()
+    {
+        Inventory = await _db.GetAsync();
+    }
+}

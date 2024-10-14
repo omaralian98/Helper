@@ -1,0 +1,67 @@
+﻿@inject NavigationManager Nav
+
+<MudDialog>
+    <TitleContent>
+        <MudText Typo="Typo.h5" Style="margin-top: 5px;">إضافة</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudStack Row="false" Justify="Justify.Center" AlignItems="AlignItems.Stretch" Spacing="2">
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Primary" 
+                       OnClick="AddIncome"
+                       Disabled="@IncomeClicked"
+                       DropShadow="true" 
+                       FullWidth="true" 
+                       Ripple="true">
+                @if (IncomeClicked)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                }
+                <MudText Class="ms-2">
+                    إضافة وارد جديد
+                </MudText>
+            </MudButton>
+            <MudButton Variant="Variant.Filled" 
+                       Color="Color.Secondary" 
+                       OnClick="AddOperation"
+                       Disabled="@OperationClicked"
+                       DropShadow="true" 
+                       FullWidth="true" 
+                       Ripple="true">
+                @if (OperationClicked)
+                {
+                    <MudProgressCircular Class="ms-n1" Size="Size.Small" Indeterminate="true" />
+                }
+                <MudText Class="ms-2">
+                    إضافة عملية جديدة
+                </MudText>
+            </MudButton>
+        </MudStack>
+    </DialogContent>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private MudDialogInstance MudDialog { get; set; }
+
+    private bool IncomeClicked { get; set; } = false;
+    private bool OperationClicked { get; set; } = false;
+    private TimeSpan delay = TimeSpan.FromSeconds(0.5);
+
+
+    private async Task AddIncome()
+    {
+        IncomeClicked = true;
+        StateHasChanged();
+        await Task.Delay(delay);
+        Nav.NavigateTo("/income/add");
+    }    
+
+    private async Task AddOperation()
+    {
+        OperationClicked = true;
+        StateHasChanged();
+        await Task.Delay(delay);
+        Nav.NavigateTo("/income/add");
+    }
+}

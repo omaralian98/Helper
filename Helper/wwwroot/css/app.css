@@ -140,10 +140,28 @@
     }
 
 
+.operation-day-card {
+    word-wrap: break-word;
+    max-width: 100%;
+}
+
+
 .operation-card {
     cursor: pointer;
     transition: all 0.5s;
+    word-wrap: break-word;
+    max-width: 100px;
+    min-height: 120px;
+    overflow: hidden;
 }
+
+    .operation-card .text {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        display: -webkit-box;
+        -webkit-line-clamp: 3;
+        -webkit-box-orient: vertical;
+    }
     .operation-card:hover {
         transition: all 0.5s;
         transform: scale(1.1);
@@ -161,4 +179,13 @@
 
 .operation-odd-year {
 /*    background: #cff74a !important;*/
+}
+
+
+.add-dialog-class {
+    backdrop-filter: blur(10px);
+}
+
+.mud-tab-slider.mud-tab-slider-horizontal {
+    width: 160px !important;
 }
